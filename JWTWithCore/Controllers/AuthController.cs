@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
 
 namespace JWTWithCore.Controllers;
 [ApiController]
@@ -38,23 +39,50 @@ public class AuthController : Controller
 
     private string CreateToken(User user)
     {
-        List<Claim> claims = new List<Claim>
+        var issuer = _configuration.GetSection("Jwt:Issuer").Value;
+        var audience = _configuration.GetSection("Jwt:Audience").Value;
+        var key = Encoding.ASCII.GetBytes(_configuration.GetSection("Jwt:Key").Value);
+        var tokenDescriptor = new SecurityTokenDescriptor
         {
-            new Claim(ClaimTypes.Name,user.UserName),
-            new Claim(ClaimTypes.Role,user.Role)
+            Subject = new ClaimsIdentity(new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+             }),
+            Expires = DateTime.UtcNow.AddMinutes(5),
+            Issuer = issuer,
+            Audience = audience,
+            SigningCredentials = new SigningCredentials
+            (new SymmetricSecurityKey(key),
+            SecurityAlgorithms.HmacSha512Signature)
         };
-        var key = new SymmetricSecurityKey(System.Text.ASCIIEncoding.UTF8.GetBytes(_configuration.GetSection("Token").Value));
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        var jwtToken = tokenHandler.WriteToken(token);
+        var stringToken = tokenHandler.WriteToken(token);
+        return stringToken;
 
-        var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
 
-        var token = new JwtSecurityToken(
-            claims: claims,
-            expires: DateTime.Now.AddDays(1),
-            signingCredentials: cred);
 
-        var jwt = new JwtSecurityTokenHandler().WriteToken(token);
 
-        return jwt;
+
+        //List<Claim> claims = new List<Claim>
+        //{
+        //    new Claim(ClaimTypes.Name,user.UserName),
+        //    new Claim(ClaimTypes.Role,user.Role)
+        //};
+        //var key = new SymmetricSecurityKey(System.Text.ASCIIEncoding.UTF8.GetBytes(_configuration.GetSection("Jwt:Key").Value));
+
+        //var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+
+        //var token = new JwtSecurityToken(
+        //    claims: claims,
+        //    expires: DateTime.Now.AddDays(1),
+        //    signingCredentials: cred);
+
+        //var jwt = new JwtSecurityTokenHandler().WriteToken(token);
+
+        //return jwt;
 
     }
 }
