@@ -48,6 +48,8 @@ public class AuthController : Controller
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                 new Claim(JwtRegisteredClaimNames.Jti,
+                Guid.NewGuid().ToString())
              }),
             Expires = DateTime.UtcNow.AddMinutes(5),
             Issuer = issuer,
@@ -58,31 +60,7 @@ public class AuthController : Controller
         };
         var tokenHandler = new JwtSecurityTokenHandler();
         var token = tokenHandler.CreateToken(tokenDescriptor);
-        var jwtToken = tokenHandler.WriteToken(token);
         var stringToken = tokenHandler.WriteToken(token);
         return stringToken;
-
-
-
-
-
-        //List<Claim> claims = new List<Claim>
-        //{
-        //    new Claim(ClaimTypes.Name,user.UserName),
-        //    new Claim(ClaimTypes.Role,user.Role)
-        //};
-        //var key = new SymmetricSecurityKey(System.Text.ASCIIEncoding.UTF8.GetBytes(_configuration.GetSection("Jwt:Key").Value));
-
-        //var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
-
-        //var token = new JwtSecurityToken(
-        //    claims: claims,
-        //    expires: DateTime.Now.AddDays(1),
-        //    signingCredentials: cred);
-
-        //var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-
-        //return jwt;
-
     }
 }
